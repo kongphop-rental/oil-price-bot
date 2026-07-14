@@ -1,0 +1,48 @@
+name: Oil Price Alert
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oil-alert
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Thai fonts
+        run: sudo apt-get update && sudo apt-get install -y fonts-thai-tlwg
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          LINE_ACCESS_TOKEN:  ${{ secrets.LINE_ACCESS_TOKEN }}
+          LINE_TARGET_ID:     ${{ secrets.LINE_TARGET_ID }}
+          IMGBB_API_KEY:      ${{ secrets.IMGBB_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python oil_price_bot.py
+
+      - name: Commit state
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add last_prices.json
+          git commit -m "update last_prices [skip ci]" || echo "no change"
+          git push || echo "nothing to push"
