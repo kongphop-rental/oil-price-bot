@@ -31,6 +31,18 @@ IMGBB_API_KEY      = os.getenv("IMGBB_API_KEY", "")        # api key จาก i
 # แหล่งข้อมูล: Web Service ทางการของบางจาก (ฟรี, คืนค่าเป็น JSON)
 BANGCHAK_API = "https://oil-price.bangchak.co.th/ApiOilPrice2/th"
 
+# แปลงชื่อแบรนด์ของบางจาก -> ชื่อมาตรฐานที่คนทั่วไปเรียก (อ่านง่ายขึ้น)
+NAME_MAP = {
+    "ไฮดีเซล S": "ดีเซล B7",
+    "ดีเซล B20": "ดีเซล B20",
+    "ไฮ พรีเมียม ดีเซล พลัส": "ดีเซล พรีเมียม",
+    "ไฮ พรีเมียม 98 พลัส": "แก๊สโซฮอล์ 98",
+    "แก๊สโซฮอล์ 95 S EVO": "แก๊สโซฮอล์ 95",
+    "แก๊สโซฮอล์ 91 S EVO": "แก๊สโซฮอล์ 91",
+    "แก๊สโซฮอล์ E20 S EVO": "แก๊สโซฮอล์ E20",
+    "แก๊สโซฮอล์ E85 S EVO": "แก๊สโซฮอล์ E85",
+}
+
 # เก็บราคาล่าสุดที่เคยแจ้ง เพื่อเทียบว่ามีการเปลี่ยนแปลงไหม
 STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_prices.json")
 
@@ -61,8 +73,10 @@ def fetch_prices():
 
     items = []
     for o in oils:
+        raw_name = o["OilName"].strip()
         items.append({
-            "name":       o["OilName"],
+            # ใช้ชื่อมาตรฐานถ้ามีในตาราง ถ้าไม่มีก็ใช้ชื่อเดิมจากบางจาก
+            "name":       NAME_MAP.get(raw_name, raw_name),
             "today":      float(o["PriceToday"]),
             "tomorrow":   float(o["PriceTomorrow"]),
             # ผลต่างของ "พรุ่งนี้เทียบวันนี้" > 0 = ขึ้น, < 0 = ลง (ข้อมูลล่วงหน้า)
